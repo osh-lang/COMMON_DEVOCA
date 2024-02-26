@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.vocalist.model.mapper.VocalistMapper">
+
+    <!-- VocalistDTO 매핑 -->
+    <resultMap id="getVocalistDTO" type="VocalistDTO">
+        <id property="vocalistId" column="vl_id"/>
+        <result property="vocalistName" column="vl_name"/>
+        <result property="cardId" column="vlc_wc_id"/>
+        <result property="vlWordCard" column="vlc_wc_select"/>
+    </resultMap>
+
+    <!-- VocalistDTO 매핑 -->
+    <resultMap id="getVocalistDetail" type="VldetailDTO">
+        <result property="vocaListId" column="vl_id"/>
+        <result property="vocalistName" column="vl_name"/>
+
+        <result property="userId" column="user_id"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userIntro" column="user_intro"/>
+        <result property="userImg" column="user_img"/>
+
+        <result property="cardId" column="card_id"/>
+        <result property="cardContent" column="card_content"/>
+        <result property="cardRepostCnt" column="card_repost_cnt"/>
+        <result property="cardRegistDate" column="card_regist_date"/>
+        <result property="cardUpdateDate" column="card_update_date"/>
+        <result property="cardLikeYN" column="card_like_yn"/>
+        <result property="cardLikeCnt" column="card_like_cnt"/>
+
+        <result property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+        <result property="wordSumm" column="word_summ"/>
+        <result property="wordDef" column="word_def"/>
+
+        <result property="originCardId" column="card_origin_card_id"/>
+        <result property="originUserNickName" column="card_origin_user_nickname"/>
+        <result property="originUserImg" column="card_origin_user_img"/>
+        <result property="originCardContent" column="card_origin_card_content"/>
+        <result property="originAuthorIdx" column="origin_author_idx"/>
+    </resultMap>
+
+    <!-- 재게시 원본 카드 정보 -->
+    <sql id="loadOriginCardInfo">
+        select c.card_id, c.card_content, u.user_idx, u.user_img, u.user_nickname
+        from cards c
+                 join (select card_origin_card_id
+                       from cards where card_origin_card_id is not null) ori on ori.card_origin_card_id = c.card_id
+                 join users u on u.user_idx = c.fk_card_user_idx
+    </sql>
+
+    <insert id="createVocaList" parameterType="VocalistDTO"
+            useGeneratedKeys="true" keyColumn="vl_id" keyProperty="vocalistId">
+        insert into voca_lists (fk_vl_user_idx, vl_name)
+        values (#{userIdx}, #{vocalistName})
+    </insert>
+
+    <select id="getVocalist" parameterType="Integer" resultMap="getVocalistDTO">
+        select vl_id, vl_name from voca_lists
+        where fk_vl_user_idx = #{userIdx}
+    </select>
+
+    <insert id="storeVocalist" parameterType="VocalistDTO">
+        insert into voca_list_cards (vlc_sl_id, vlc_wc_id, vlc_wc_select)
+        values (#{vocalistId}, #{cardId}, #{vlWordCard})
+    </insert>
+
+    <delete id="deleteVocalist" parameterType="java.util.Map">
+        delete from voca_lists
+               where vl_id = #{vlId} and fk_vl_user_idx = #{userIdx};
+    </delete>
+
+    <!-- 단어장 상세 목록 -->
+    <select id="getVocalistDetail" parameterType="map" resultMap="getVocalistDetail">
+        select vl.vl_id, vl.vl_name
+            ,c.card_id, c.card_content, c.card_repost_cnt
+            ,c.card_regist_date ,c.card_update_date -- card 데이터
+            ,if(l.like_to is null, 'N', 'Y') as card_like_yn
+            ,(select count('true') from likes where like_to = c.card_id) as card_like_cnt
+            ,w.word_id, w.word_name_en, w.word_name_kr, w.word_def, w.word_summ -- word 데이터
+            ,u.user_nickname, u.user_intro, u.user_img -- author 데이터
+            ,rp.card_id as card_origin_card_id , rp.card_content as card_origin_card_content ,rp.user_idx as origin_author_idx
+            ,rp.user_img as card_origin_user_img, rp.user_nickname as card_origin_user_nickname -- ori_author_img, ori_author_name
+        from cards c
+            left join (<include refid="loadOriginCardInfo"></include>) rp
+                        on c.card_origin_card_id = rp.card_id
+            left join likes l on c.card_id = l.like_to and l.like_from = #{userIdx}
+            join (select vl.vl_id, vl.vl_name, vlc.vlc_wc_id, vlc.vlc_store_date
+                    from voca_lists vl join voca_list_cards vlc on vl.vl_id = vlc.vlc_sl_id
+                    where vl.vl_id = #{vocaListId} and vl.fk_vl_user_idx = #{userIdx}) vl on vl.vlc_wc_id = c.card_id
+            join words w on c.card_word_id = w.word_id
+            join users u on u.user_idx = c.fk_card_user_idx
+            order by vl.vlc_store_date
+    </select>
+
+    <!-- 특정 카드에 대한 목록 조회 -->
+    <select id="checkVocalist" parameterType="map" resultMap="getVocalistDTO">
+        select vl.vl_id, vl.vl_name
+             ,if (vlc.vlc_id is null, "N", "Y") as includeYN
+        from voca_lists vl
+            left join (select * from voca_list_cards where vlc_wc_id = #{cardId}) vlc on vl.vl_id = vlc.vlc_sl_id
+        where vl.fk_vl_user_idx = #{userIdx}
+    </select>
+
+    <delete id="cancelVocalist" parameterType="map">
+        delete from voca_list_cards where vlc_sl_id = #{vlId} and vlc_wc_id = #{cardId}
+    </delete>
+
+</mapper>

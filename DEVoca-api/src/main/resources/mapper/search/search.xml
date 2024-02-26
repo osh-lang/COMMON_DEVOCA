@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.search.model.mapper.SearchMapper">
+
+    <!-- WordDTO 매핑 -->
+    <resultMap id="wordListResultMap" type="WordDTO">
+        <id property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+        <result property="wordDef" column="word_def"/>
+        <result property="wordSumm" column="word_summ"/>
+        <result property="wordLink" column="word_link"/>
+        <collection property="wordCategory" javaType="ArrayList" ofType="String">
+            <result column="category_name"/>
+        </collection>
+    </resultMap>
+
+    <!--  CardDTO 매핑 -->
+    <resultMap id="CardDTOResultMap" type="CardDTO">
+        <result property="userId" column="user_id"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userIntro" column="user_intro"/>
+        <result property="userImg" column="user_img"/>
+
+        <result property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+        <result property="wordSumm" column="word_summ"/>
+
+        <result property="originCardId" column="card_origin_card_id"/>
+        <result property="originUserNickName" column="card_origin_user_nickname"/>
+        <result property="originUserImg" column="card_origin_user_img"/>
+        <result property="originCardContent" column="card_origin_card_content"/>
+
+        <result property="cardId" column="card_id"/>
+        <result property="cardContent" column="card_content"/>
+        <result property="cardLikeYN" column="card_like_yn"/>
+        <result property="cardLikeCnt" column="card_like_cnt"/>
+        <result property="cardRepostCnt" column="card_repost_cnt"/>
+        <result property="cardLink" column="card_link"/>
+        <result property="cardRelatedKeyword" column="card_related_keyword"/>
+        <result property="cardRegistDate" column="card_regist_date"/>
+        <result property="cardUpdateDate" column="card_update_date"/>
+    </resultMap>
+
+    <!--  WordRecoDTO 매핑 -->
+    <resultMap id="WordRecoDTOResultMap" type="WordRecoDTO">
+        <result property="wordId" column="word_id"/>
+        <result property="wordNameEn" column="word_name_en"/>
+    </resultMap>
+
+    <!-- WordAutoDTO 매핑 -->
+    <resultMap id="wordAutoDTOResultMap" type="WordAutoDTO">
+        <id property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+    </resultMap>
+
+    <!--  userId로 userIdx 불러오기  -->
+    <sql id="loadUserIdx">
+        select user_idx from users where user_id = #{userId}
+    </sql>
+
+    <!--  재게시 원본 카드 작성자 정보 불러오기  -->
+    <sql id="loadOriginUserInfo">
+        from users u join cards c
+			on u.user_idx = c.fk_card_user_idx
+            where c.card_id = oci
+    </sql>
+
+    <!--  키워드 저장, 이미 저장되어 있다면 일시 갱신  -->
+    <insert id="saveSearchKeyword" parameterType="map">
+        insert into searched_keywords
+            (sk_user_idx, sk_searched_keyword)
+        values (#{loginUserIdx}, #{keyword})
+        on duplicate key update sk_searched_date = now();
+    </insert>
+
+    <!-- 단어 검색 -->
+    <select id="searchWord" parameterType="map" resultMap="wordListResultMap">
+        select w.word_id, w.word_name_kr, w.word_name_en, w.word_summ, c.category_name
+        from words w join words_categories wc join categories c
+           on w.word_id = wc.wc_word_id
+                and c.category_id = wc.wc_category_id
+        where lower(w.word_name_en) like lower(concat("%", #{keyword}, "%"))
+           or w.word_name_kr like concat("%", #{keyword}, "%")
+        order by length(w.word_name_en), w.word_name_en, length(w.word_name_kr), w.word_name_kr
+            limit #{scroll}, 10;
+    </select>
+
+    <!--  카드 검색 : 검색 조건 향후 회의 필요  -->
+    <select id="searchCard" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+            word_id, word_name_kr, word_name_en, word_summ,
+            card_origin_card_id, card_origin_card_id as oci,
+            (select u.user_nickname <include refid="loadOriginUserInfo"></include>) as card_origin_user_nickname,
+            (select u.user_img <include refid="loadOriginUserInfo"></include>) as card_origin_user_img,
+            (select card_content
+                from cards
+                where card_id = oci) as card_origin_card_content,
+            card_id, card_content,
+            ifnull((select 'true' from likes
+                        where like_from = #{loginUserIdx}
+                        and like_to = card_id), 'false') as card_like_yn,
+            (select count('true') from likes where like_to = card_id) as card_like_cnt,
+            card_repost_cnt, card_regist_date, card_update_date
+        from users u right join cards c
+            on u.user_idx = c.fk_card_user_idx
+            left join words w
+            on c.card_word_id = word_id
+        where card_id in (select card_id
+                            from cards c join words w
+                                on c.card_word_id = w.word_id
+                            where card_content like concat("%", #{keyword}, "%")
+                                or word_name_kr like concat("%", #{keyword}, "%")
+                                or word_name_en like concat("%", #{keyword}, "%"))
+                            and card_delete_date is null
+        ORDER BY
+            CASE
+                WHEN card_update_date IS NOT NULL AND card_update_date >= card_regist_date THEN card_update_date
+                ELSE card_regist_date
+            END DESC
+        limit #{scroll}, 10;
+    </select>
+
+    <!-- 검색 조회수 상위 단어 10개 조회 : 별도의 DTO를 만들지 않아 정보를 과하게 가져옴. 별도의 DTO 만들지 여부 회의 필요 -->
+    <select id="searchRecommendWord" resultMap="WordRecoDTOResultMap">
+        select word_id, word_name_en
+        from words
+        order by word_searched_cnt desc
+        limit 10;
+    </select>
+
+    <!-- 최근 검색어 5개 조회 -->
+    <select id="getRecentKeyword" parameterType="Integer" resultType="String">
+        select sk_searched_keyword
+        from searched_keywords
+        where sk_user_idx = #{loginUserIdx}
+        order by sk_searched_date desc
+        limit 5;
+    </select>
+
+    <!--  자동완성용 단어 조회  -->
+    <select id="getAutoCompList" resultMap="wordAutoDTOResultMap">
+        select word_id, word_name_en, word_name_kr
+        from words
+        order by word_name_en, word_name_kr;
+    </select>
+
+
+</mapper>

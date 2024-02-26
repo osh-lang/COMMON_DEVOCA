@@ -1,0 +1,231 @@
+abstract data type (ADT): #DataStructure #Abstraction
+abstract method: #Method #Abstraction
+abstraction: #Abstraction
+agent architecture: #AgentArchitecture #ArtificialIntelligence
+agent-based model (ABM): #AgentBasedModel #Simulation
+aggregate function: #DataAnalysis #AggregateFunction
+agile software development: #Agile #SoftwareDevelopment
+algorithm: #Algorithm #Computation
+algorithm design: #AlgorithmDesign
+algorithmic efficiency: #AlgorithmicEfficiency #Complexity
+American Standard Code for Information Interchange (ASCII): #ASCII #CharacterEncoding
+application programming interface (API): #API #Integration
+artifact: #Artifact #SoftwareDevelopment
+assertion: #Assertion #Testing
+associative array: #Array #DataStructure
+automata theory: #AutomataTheory #FormalLanguages
+automated reasoning: #AutomatedReasoning #ArtificialIntelligence
+bandwidth: #Bandwidth #Networking
+Bayesian programming: #BayesianProgramming #MachineLearning
+benchmark: #Benchmark #PerformanceTesting
+best, worst and average case: #AlgorithmAnalysis #Complexity
+big data: #BigData #DataAnalysis
+big O notation: #BigO #AlgorithmAnalysis
+binary number: #Binary #NumberRepresentation
+binary tree: #BinaryTree #DataStructure
+bioinformatics: #Bioinformatics #ComputationalBiology
+bit: #Bit #DataRepresentation
+Boolean data type: #Boolean #DataType
+Boolean expression: #Boolean #Logic
+Boolean algebra: #Boolean #Algebra
+byte: #Byte #DataRepresentation
+booting: #Booting #Startup
+central processing unit (CPU): #CPU #Hardware
+character: #Character #DataRepresentation
+class: #Class #ObjectOrientedProgramming
+client: #Client #Networking
+cleanroom software engineering: #Cleanroom #SoftwareEngineering
+cloud computing: #CloudComputing #Infrastructure
+code library: #CodeLibrary #SoftwareDevelopment
+coding: #Coding #Programming
+coding theory: #CodingTheory #InformationTheory
+cognitive science: #CognitiveScience #Interdisciplinary
+collection: #Collection #DataStructure
+comma-separated values (CSV): #CSV #DataFormat
+compiler: #Compiler #SoftwareDevelopment
+computability theory: #ComputabilityTheory #FormalLanguages
+computation: #Computation #ComputationalThinking
+computational biology: #ComputationalBiology #Bioinformatics
+computational chemistry: #ComputationalChemistry #Chemistry
+computational complexity theory: #ComplexityTheory #Algorithms
+computational model: #ComputationalModel #Modeling
+computational physics: #ComputationalPhysics #Physics
+computational steering: #ComputationalSteering #Simulation
+computer: #Computer #Hardware
+computer architecture: #ComputerArchitecture #Hardware
+computer ethics: #ComputerEthics #EthicalConsiderations
+computer graphics: #ComputerGraphics #Visualization
+computer program: #ComputerProgram #SoftwareDevelopment
+computer programming: #ComputerProgramming #SoftwareDevelopment
+computer science: #ComputerScience #FieldOfStudy
+computer scientist: #ComputerScientist #Career
+computer vision: #ComputerVision #ImageProcessing
+computing: #Computing #Technology
+concatenation: #Concatenation #StringOperation
+Concurrency: #Concurrency #ParallelComputing
+container: #Container #Virtualization
+cryptography: #Cryptography #Security
+CSV: #CSV #DataFormat
+cyberspace: #Cyberspace #VirtualEnvironment
+daemon: #Daemon #Process
+database: #Database #DataStorage
+data mining: #DataMining #DataAnalysis
+data science: #DataScience #Interdisciplinary
+data structure: #DataStructure #Algorithm
+debugging: #Debugging #SoftwareDevelopment
+declaration: #Declaration #Programming
+digital data: #DigitalData #DataRepresentation
+disk storage: #DiskStorage #DataStorage
+distributed computing: #DistributedComputing #Network
+divide and conquer algorithm: #DivideAndConquer #Algorithm
+DNS: #DNS #Network #Web
+documentation: #Documentation #Information
+domain: #Domain #Internet
+double-precision floating-point format: #FloatingPoint #DataRepresentation
+download: #Download #DataTransfer
+edge device: #EdgeDevice #IoT
+encryption: #Encryption #Security
+event: #Event #Programming
+event-driven programming: #EventDriven #Programming
+evolutionary computing: #EvolutionaryComputing #Algorithm
+execution: #Execution #Computing
+exception handling: #ExceptionHandling #ErrorHandling
+Existence detection: #ExistenceDetection #Detection
+expression: #Expression #Programming
+fault-tolerant computer system: #FaultTolerant #System
+feasibility study: #FeasibilityStudy #Analysis
+field: #Field #Data
+filename extension: #FileExtension #FileFormat
+filter (software): #Filter #Software
+floating point arithmetic: #FloatingPoint #Arithmetic
+formal methods: #FormalMethods #Verification
+formal verification: #FormalVerification #Verification
+functional programming: #FunctionalProgramming #ProgrammingParadigm
+game theory: #GameTheory #Mathematics
+garbage in, garbage out (GIGO): #GIGO #DataQuality
+gigabyte: #Gigabyte #DataSize
+global variable: #GlobalVariable #Programming
+graph theory: #GraphTheory #Mathematics
+handle: #Handle #Reference
+hard problem: #HardProblem #Complexity
+hash function: #HashFunction #Hashing
+hash table: #HashTable #DataStructure
+heap: #Heap #DataStructure
+heapsort: #Heapsort #SortingAlgorithm
+human-computer interaction (HCI): #HCI #InteractionDesign
+identifier: #Identifier #Programming
+IDE: #IDE #DevelopmentEnvironment
+imperative programming: #ImperativeProgramming #ProgrammingParadigm
+incremental build model: #IncrementalBuild #SoftwareDevelopment
+information space analysis: #InformationSpace #Analysis
+inheritance: #Inheritance #ObjectOrientedProgramming
+insertion sort: #InsertionSort #SortingAlgorithm
+integer: #Integer #DataType
+integration testing: #IntegrationTesting #Testing
+intelligent agent: #IntelligentAgent #ArtificialIntelligence
+interface: #Interface #Programming
+internal documentation: #InternalDocumentation #Documentation
+internet: #Internet #Network
+interpreter: #Interpreter #SoftwareDevelopment
+invariant: #Invariant #Logic
+iteration: #Iteration #Loop
+Java: #Java #ProgrammingLanguage
+kernel: #Kernel #OperatingSystem
+library (computing): #Library #SoftwareDevelopment
+linked list: #LinkedList #DataStructure
+linker: #Linker #SoftwareDevelopment
+list: #List #DataStructure
+loader: #Loader #SoftwareDevelopment
+logic error: #LogicError #Bug
+logic programming: #LogicProgramming #ProgrammingParadigm
+mathematical logic: #MathematicalLogic #Logic
+matrix: #Matrix #DataStructure
+memory: #Memory #Hardware
+method: #Method #Programming
+methodology: #Methodology #Approach
+natural language processing (NLP): #NLP #LanguageProcessing
+node: #Node #DataStructure
+number theory: #NumberTheory #Mathematics
+numerical analysis: #NumericalAnalysis #Mathematics
+numerical method: #NumericalMethod #Mathematics
+object: #Object #Programming
+optical fiber: #OpticalFiber #Networking
+pair programming: #PairProgramming #Collaboration
+parallel computing: #ParallelComputing #Computing
+peripheral: #Peripheral #Hardware
+pointer: #Pointer #Programming
+postcondition: #Postcondition #Programming
+precondition: #Precondition #Programming
+primary storage: #PrimaryStorage #Storage
+priority queue: #PriorityQueue #DataStructure
+procedure: #Procedure #Programming
+program lifecycle phase: #LifecyclePhase #SoftwareDevelopment
+programming language: #ProgrammingLanguage #SoftwareDevelopment
+programming language implementation: #LanguageImplementation #SoftwareDevelopment
+programming language theory: #LanguageTheory #SoftwareDevelopment
+Prolog: #Prolog #ProgrammingLanguage
+Python: #Python #ProgrammingLanguage
+quantum computing: #QuantumComputing #Computing
+queue: #Queue #DataStructure
+R programming language: #R #ProgrammingLanguage
+record: #Record #DataStructure
+recursion: #Recursion #Algorithm
+reference: #Reference #Programming
+reference counting: #ReferenceCounting #MemoryManagement
+relational database: #RelationalDatabase #Database
+reliability engineering: #ReliabilityEngineering #Engineering
+regression testing: #RegressionTesting #Testing
+requirements analysis: #RequirementsAnalysis #SoftwareDevelopment
+robotics: #Robotics #Engineering
+router: #Router #Networking
+routing table: #RoutingTable #Networking
+run time: #RunTime #Execution
+run time error: #RunTimeError #Error
+search algorithm: #SearchAlgorithm #Algorithm
+secondary storage: #SecondaryStorage #Storage
+selection sort: #SelectionSort #SortingAlgorithm
+semantics: #Semantics #Language
+sequence: #Sequence #DataStructure
+serializability: #Serializability #DataConsistency
+serialization: #Serialization #DataFormat
+service level agreement: #SLA #Agreement
+set: #Set #DataStructure
+singleton variable: #SingletonVariable #Programming
+software: #Software #Application
+software agent: #SoftwareAgent #ArtificialIntelligence
+software construction: #SoftwareConstruction #SoftwareDevelopment
+software deployment: #SoftwareDeployment #Deployment
+software design: #SoftwareDesign #Design
+software development: #SoftwareDevelopment #Development
+software development process: #SoftwareDevelopmentProcess #Process
+software engineering: #SoftwareEngineering #Engineering
+software maintenance: #SoftwareMaintenance #Maintenance
+software prototyping: #SoftwarePrototyping #Prototyping
+software requirements specification: #SoftwareRequirements #Specification
+software testing: #SoftwareTesting #Testing
+sorting algorithm: #SortingAlgorithm #Algorithm
+source code: #SourceCode #Programming
+spiral model: #SpiralModel #SoftwareDevelopment
+stack: #Stack #DataStructure
+state: #State #Programming
+statement: #Statement #Programming
+storage: #Storage #DataStorage
+stream: #Stream #DataProcessing
+string: #String #DataType
+structured storage: #StructuredStorage #DataStorage
+subroutine: #Subroutine #Programming
+symbolic computation: #SymbolicComputation #Mathematics
+syntax: #Syntax #Programming
+syntax error: #SyntaxError #Error
+system console: #SystemConsole #OperatingSystem
+technical documentation: #TechnicalDocumentation #Documentation
+third-generation programming language: #ThirdGeneration #ProgrammingLanguage
+tree: #Tree #DataStructure
+type theory: #TypeTheory #Mathematics
+upload: #Upload #DataTransfer
+user: #User #HumanInteraction
+user agent: #UserAgent #Networking
+variable: #Variable #Programming
+V-Model: #VModel #SoftwareDevelopment
+waterfall model: #WaterfallModel #SoftwareDevelopment
+Wi-Fi: #WiFi #Networking

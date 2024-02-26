@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.card.model.mapper.CardMapper">
+
+    <!--  CardDTO 매핑 -->
+    <resultMap id="CardDTOResultMap" type="CardDTO">
+        <result property="userId" column="user_id"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userIntro" column="user_intro"/>
+        <result property="userImg" column="user_img"/>
+
+        <result property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+        <result property="wordSumm" column="word_summ"/>
+
+        <result property="originCardId" column="card_origin_card_id"/>
+        <result property="originUserNickName" column="card_origin_user_nickname"/>
+        <result property="originUserImg" column="card_origin_user_img"/>
+        <result property="originCardContent" column="card_origin_card_content"/>
+
+        <result property="cardId" column="card_id"/>
+        <result property="cardContent" column="card_content"/>
+        <result property="cardLikeYN" column="card_like_yn"/>
+        <result property="cardLikeCnt" column="card_like_cnt"/>
+        <result property="cardRepostCnt" column="card_repost_cnt"/>
+        <result property="cardLink" column="card_link"/>
+        <result property="cardRelatedKeyword" column="card_related_keyword"/>
+        <result property="cardRegistDate" column="card_regist_date"/>
+        <result property="cardUpdateDate" column="card_update_date"/>
+    </resultMap>
+
+    <!--  userId로 userIdx 불러오기  -->
+    <sql id="loadUserIdx">
+        select user_idx from users where user_id = #{userId}
+    </sql>
+
+    <!--  loginUserIdx가 follow하는 userIdx 불러오기  -->
+    <sql id="loginUserFollowIdx">
+        select u.user_idx
+        from users u right join follows f
+        on u.user_idx = f.follow_to
+        where f.follow_from = #{loginUserIdx}
+        union
+        select #{loginUserIdx} as user_idx
+    </sql>
+
+    <!--  재게시 원본 카드 작성자 정보 불러오기  -->
+    <sql id="loadOriginUserInfo">
+        from users u join cards c
+			on u.user_idx = c.fk_card_user_idx
+            where c.card_id = oci
+    </sql>
+
+    <!--  카드 등록  -->
+    <insert id="registerCard" parameterType="CardDTO">
+        insert into cards (fk_card_user_idx, card_word_id, card_content, card_link, card_related_keyword)
+        values((<include refid="loadUserIdx"></include> and user_revoke_date is null), #{wordId}, #{cardContent}, #{cardLink}, #{cardRelatedKeyword});
+    </insert>
+
+    <!--  카드 수정  -->
+    <update id="updateCard" parameterType="CardDTO">
+        update cards
+            set card_content = #{cardContent},
+                card_link = #{cardLink},
+                card_related_keyword = #{cardRelatedKeyword},
+                card_update_date = now()
+        where card_id = #{cardId};
+    </update>
+
+    <!--  카드 삭제  -->
+    <update id="deleteCard" parameterType="int">
+        update cards
+        set card_delete_date = now()
+        where card_id = #{cardId};
+    </update>
+
+    <!--  카드 상세 조회  -->
+    <select id="getCardDetail" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+               word_id, word_name_kr, word_name_en, word_summ,
+               card_origin_card_id, card_origin_card_id as oci,
+               (select u.user_nickname <include refid="loadOriginUserInfo"></include>) as card_origin_user_nickname,
+               (select u.user_img <include refid="loadOriginUserInfo"></include>) as card_origin_user_img,
+               (select card_content
+                    from cards
+                    where card_id = oci) as card_origin_card_content,
+               card_id, card_content,
+               ifnull((select 'true' from likes
+                            where like_from = #{loginUserIdx}
+                            and like_to = card_id), 'false') as card_like_yn,
+               (select count('true') from likes where like_to = card_id) as card_like_cnt,
+               card_repost_cnt, card_link, card_related_keyword, card_regist_date, card_update_date
+        from cards c left join users u
+            on c.fk_card_user_idx = u.user_idx
+        left join words w
+            on c.card_word_id = w.word_id
+        where card_id = #{cardId}
+        and card_delete_date is null;
+    </select>
+
+    <!--  카드 목록 조회 -->
+    <select id="getCardList" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+               word_id, word_name_kr, word_name_en, word_summ,
+               card_origin_card_id, card_origin_card_id as oci,
+               (select u.user_nickname <include refid="loadOriginUserInfo"></include>) as card_origin_user_nickname,
+               (select u.user_img <include refid="loadOriginUserInfo"></include>) as card_origin_user_img,
+               (select card_content
+                    from cards
+                    where card_id = oci) as card_origin_card_content,
+                    card_id, card_content,
+               ifnull((select 'true' from likes
+                            where like_from = #{loginUserIdx}
+                            and like_to = card_id), 'false') as card_like_yn,
+               (select count('true') from likes where like_to = card_id) as card_like_cnt,
+               card_repost_cnt, card_regist_date, card_update_date
+        from users u right join cards c
+            on u.user_idx = c.fk_card_user_idx
+            left join words w
+            on c.card_word_id = word_id
+        where u.user_idx in (<include refid="loginUserFollowIdx"></include>)
+            and card_delete_date is null
+        ORDER BY
+            CASE
+            WHEN card_update_date IS NOT NULL AND card_update_date >= card_regist_date THEN card_update_date
+            ELSE card_regist_date
+            END DESC
+        limit #{scroll}, 10;
+    </select>
+
+    <!--  단어id로 카드 목록 조회 -->
+    <select id="getCardListByWord" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+               word_id, word_name_kr, word_name_en, word_summ,
+               card_origin_card_id, card_origin_card_id as oci,
+               (select u.user_nickname <include refid="loadOriginUserInfo"></include>) as card_origin_user_nickname,
+               (select u.user_img <include refid="loadOriginUserInfo"></include>) as card_origin_user_img,
+               (select card_content
+                    from cards
+                    where card_id = oci) as card_origin_card_content,
+                    card_id, card_content,
+               ifnull((select 'true' from likes
+                            where like_from = #{loginUserIdx}
+                            and like_to = card_id), 'false') as card_like_yn,
+               (select count('true') from likes where like_to = card_id) as card_like_cnt,
+               card_repost_cnt, card_regist_date, card_update_date
+        from users u right join cards c
+            on u.user_idx = c.fk_card_user_idx
+            left join words w
+            on c.card_word_id = word_id
+        where c.card_word_id = #{wordId}
+            and card_delete_date is null
+            and card_content is not null
+        ORDER BY
+            card_like_cnt desc,
+                CASE
+                WHEN card_update_date IS NOT NULL AND card_update_date >= card_regist_date THEN card_update_date
+                ELSE card_regist_date
+            END DESC
+        limit #{scroll}, 10;
+    </select>
+
+    <!--  유저id로 카드 목록 조회 -->
+    <select id="getCardListByUserId" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+               word_id, word_name_kr, word_name_en, word_summ,
+               card_origin_card_id, card_origin_card_id as oci,
+               (select u.user_nickname <include refid="loadOriginUserInfo"></include>) as card_origin_user_nickname,
+               (select u.user_img <include refid="loadOriginUserInfo"></include>) as card_origin_user_img,
+               (select card_content
+                    from cards
+                    where card_id = oci) as card_origin_card_content,
+                    card_id, card_content,
+               ifnull((select 'true' from likes
+                            where like_from = #{loginUserIdx}
+                            and like_to = card_id), 'false') as card_like_yn,
+               (select count('true') from likes where like_to = card_id) as card_like_cnt,
+               card_repost_cnt, card_regist_date, card_update_date
+        from users u right join cards c
+            on u.user_idx = c.fk_card_user_idx
+            left join words w
+            on c.card_word_id = word_id
+        where c.fk_card_user_idx = (<include refid="loadUserIdx"></include>)
+            and card_delete_date is null
+        ORDER BY
+            CASE
+                WHEN card_update_date IS NOT NULL AND card_update_date >= card_regist_date THEN card_update_date
+                ELSE card_regist_date
+            END DESC
+        limit #{scroll}, 10;
+    </select>
+
+    <!--  카드 재게시  -->
+    <insert id="repostCard" parameterType="CardDTO" useGeneratedKeys="true" keyProperty="cardId" keyColumn="card_id">
+        insert into cards (fk_card_user_idx, card_word_id, card_content, card_link, card_related_keyword, card_origin_card_id)
+        values((<include refid="loadUserIdx"></include> and user_revoke_date is null),
+               #{wordId}, #{cardContent}, #{cardLink}, #{cardRelatedKeyword}, #{originCardId});
+    </insert>
+    <!--  재게시 시 원본 카드의 repostCnt  -->
+    <update id="repostCntUpdate" parameterType="int">
+        update cards
+        set card_repost_cnt = card_repost_cnt + 1
+        where card_id = #{originCardId};
+    </update>
+
+    <!-- 마이페이지 내 피드 목록 조회 -->
+    <select id="getMyCard" parameterType="map" resultMap="CardDTOResultMap">
+        select user_id, user_nickname, user_intro, user_img,
+               word_id, word_name_kr, word_name_en, word_summ,
+               c.card_origin_card_id, c.card_origin_card_id as oci,
+               (select user_img
+                from users
+                    join cards on users.user_idx = cards.fk_card_user_idx
+                where cards.card_id = oci) as card_origin_user_img,
+               (select user_nickname
+                from users
+                         join cards on users.user_idx = cards.fk_card_user_idx
+                where cards.card_id = oci) as card_origin_user_nickname,
+               oc.card_content  as card_origin_card_content,
+               c.card_id, c.card_content,
+               ifnull((select 'Y' from likes
+                       where like_from = #{userIdx}
+                         and like_to = c.card_id), 'N') as card_like_yn,
+               (select count(*) from likes where like_to = c.card_id) as card_like_cnt,
+               c.card_repost_cnt, c.card_regist_date, c.card_update_date
+        from users u
+                 right join cards c on u.user_idx = c.fk_card_user_idx
+                 left join cards oc on c.card_origin_card_id = oc.card_id
+                 left join words w on c.card_word_id = word_id
+        where u.user_idx = #{userIdx}
+          and c.card_delete_date is null
+        ORDER BY
+            CASE
+                WHEN c.card_update_date IS NOT NULL AND c.card_update_date >= c.card_regist_date THEN c.card_update_date
+                ELSE c.card_regist_date
+                END DESC
+            limit #{scroll}, 10
+    </select>
+
+    <!--  좋아요 삭제  -->
+    <delete id="deleteLike" parameterType="map">
+        delete from likes
+        where like_from = #{loginUserIdx}
+          and like_to = #{cardId};
+    </delete>
+
+    <!--  좋아요 추가  -->
+    <insert id="addLike" parameterType="map">
+        insert into likes(like_from, like_to)
+        values (#{loginUserIdx}, #{cardId});
+    </insert>
+
+    <!-- 카드 작성자 아이디 가져오기 -->
+    <select id="getCardUserIdx" parameterType="int">
+        select fk_card_user_idx
+        from cards
+        where card_id = #{cardId};
+    </select>
+</mapper>

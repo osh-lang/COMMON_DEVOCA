@@ -1,0 +1,70 @@
+<!-- author: cheesecat47 <cheese47@gmail.com> -->
+  <!DOCTYPE html>
+  <html lang="en">
+  
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.ico">
+    <title>DEVoca: 개발자를 위한 단어장</title>
+    <style>
+      @font-face {
+        font-family: 'GmarketSansMedium';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>
+    <link href="assets/daisy.full.min.css" rel="stylesheet" type="text/css" />
+    <script src="assets/tailwind.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['GmarketSansMedium'],
+            },
+          }
+        }
+      }
+    </script>
+    <script src="assets/axios.min.js"></script>
+  </head>
+  
+  <body>
+    <div id="app" class="w-[450px]" data-theme="pastel">
+      <!-- 검색창 -->
+      <div class="w-full p-2 flex justify-evenly items-center bg-[#00313B]" id="searchbar">
+        <div class="w-10 mr-2">
+          <img alt="logo image" src="images/icon-128.png" />
+        </div>
+        <input id="searchInput" class="input input-bordered bg-white text-black w-64 h-8" type="text"
+          placeholder="검색어를 입력하세요" />
+        <button id="searchBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 stroke-white" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+      </div>
+  
+      <!-- 단어에 블록을 잡는 등의 특정 이벤트가 발생한 후 팝업이 뜨므로 기본적으로는 검색 결과를 바로 보여줌 -->
+      <div class="px-1 pb-2 bg-white text-black">
+        <div role="tablist" class="tabs tabs-bordered tabs-xl">
+          <span role="tab" class="tab tab-active text-xl mt-4">단어 검색 결과</span>
+        </div>
+        <div id="tabContent" class="p-4 text-lg text-center"><p class="loading loading-dots loading-sm"></p></div>
+  
+        <div class="text-right mx-4 mb-2">
+          <div id="moreOnDEVocaBtn">
+            <img class="w-16 inline drop-shadow-lg drop-shadow-white" src="images/logo.png" alt="devoca" /> 에서 더 보기 ▶
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <script src="scripts/content.js" type="module"></script>
+  </body>
+  
+  </html>

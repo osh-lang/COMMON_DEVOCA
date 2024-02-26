@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.word.model.mapper.WordMapper">
+
+    <!-- getWordList, getWordDetail, getWordInCard 결과 매핑 -->
+    <resultMap id="wordResultMap" type="WordDTO">
+        <id property="wordId" column="word_id"/>
+        <result property="wordNameKr" column="word_name_kr"/>
+        <result property="wordNameEn" column="word_name_en"/>
+        <result property="wordDef" column="word_def"/>
+        <result property="wordSumm" column="word_summ"/>
+        <result property="wordLink" column="word_link"/>
+        <collection property="wordCategory" javaType="ArrayList" ofType="String">
+            <result column="category_name"/>
+        </collection>
+    </resultMap>
+
+    <!-- getWordList 쿼리 -->
+    <select id="getWordList" parameterType="String" resultMap="wordResultMap">
+        select w.word_id, w.word_name_kr, w.word_name_en, w.word_def, w.word_summ, c.category_name
+        from words w join words_categories wc join categories c
+        on w.word_id = wc.wc_word_id
+        and c.category_id = wc.wc_category_id
+        where lower(w.word_name_en) like lower(concat(#{alphabet}, '%'))
+        order by word_name_en;
+    </select>
+
+    <!-- getWordDetail 쿼리 -->
+    <select id="getWordDetail" parameterType="int" resultMap="wordResultMap">
+        select w.word_id, w.word_name_kr, w.word_name_en, w.word_def, w.word_summ, w.word_link, c.category_name
+        from words w
+            left join words_categories wc
+                on w.word_id = wc.wc_word_id
+            left join categories c
+                on c.category_id = wc.wc_category_id
+        where w.word_id = #{wordId}
+        order by word_name_en;
+    </select>
+
+    <!-- getWordInCard 쿼리 -->
+    <select id="getWordInCard" resultMap="wordResultMap">
+        select w.word_id, w.word_name_kr, w.word_name_en, w.word_summ, c.category_name
+        from words w join words_categories wc join categories c
+            on w.word_id = wc.wc_word_id and c.category_id = wc.wc_category_id
+        where w.word_id = #{wordId};
+    </select>
+
+    <!--  단어 검색 조회수 업데이트  -->
+    <update id="updateWordViewedCnt" parameterType="int">
+        update words
+        set word_searched_cnt = word_searched_cnt + 1
+        where word_id = #{wordId};
+    </update>
+</mapper>

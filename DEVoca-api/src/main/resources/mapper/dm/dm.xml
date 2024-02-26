@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.dm.model.mapper.DmMapper">
+
+    <!-- getDmRoomList 결과 매핑-->
+    <resultMap id="DmRoomResultMap" type="DmRoomDTO">
+        <result property="roomUuid" column="dr_uuid"/>
+        <result property="userImg" column="user_img"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="lastMessage" column="dm_content"/>
+        <result property="lastSendDate" column="dm_send_date"/>
+        <result property="unReadCnt" column="unread_message"/>
+    </resultMap>
+
+    <!-- getDmList 결과 매핑 -->
+    <resultMap id="DmResultMap" type="DmDTO">
+        <result property="sendUserId" column="user_id"/>
+        <result property="dmContent" column="dm_content"/>
+        <result property="dmSendDate" column="dm_send_date"/>
+        <result property="dmBattleQuizId" column="dm_battle_quiz_id"/>
+    </resultMap>
+
+    <!-- loginUserIdx가 참여한 방 아이디 가져오기 -->
+    <sql id="getRoomIdxByLoginUser">
+        select dp_dr_idx from dm_participants where dp_user_idx = #{loginUserIdx}
+    </sql>
+
+    <!-- getDmRoomList 쿼리 -->
+    <select id="getDmRoomList" parameterType="int" resultMap="DmRoomResultMap">
+        select dr.dr_uuid, u.user_id, u.user_nickname, u.user_img, dm.dm_content, dm.dm_send_date, unread_message
+        from dm_participants dp
+            join dm_rooms dr on dp.dp_dr_idx = dr.dr_idx
+            join users u on dp.dp_user_idx = u.user_idx
+            join dm_messages dm on dm.fk_dm_dr_idx = dr.dr_idx
+            left join (select dm.fk_dm_dr_idx, dm.fk_dm_user_idx, count(*) unread_message
+                       from (<include refid="getRoomIdxByLoginUser"></include>) idx
+                           join (select dp_dr_idx, dp_last_date from dm_participants where dp_user_idx = #{loginUserIdx}) dp
+                               on idx.dp_dr_idx = dp.dp_dr_idx
+                           join dm_messages dm
+                               on idx.dp_dr_idx = dm.fk_dm_dr_idx
+                       where dm.dm_send_date > dp.dp_last_date
+                       group by fk_dm_dr_idx, fk_dm_user_idx) um on um.fk_dm_dr_idx = dr.dr_idx
+        where dp.dp_dr_idx in (<include refid="getRoomIdxByLoginUser"></include>)
+          and dp.dp_user_idx != #{loginUserIdx}
+          and dm.dm_send_date in (select max(dm_send_date)
+                                  from dm_messages
+                                  group by fk_dm_dr_idx)
+        group by dr.dr_idx, dr.dr_uuid, u.user_id, u.user_nickname, u.user_img, dm.dm_content, dm.dm_send_date, unread_message
+        order by dm.dm_send_date desc;
+    </select>
+
+    <!-- getDmList 쿼리 -->
+    <select id="getDmList" resultMap="DmResultMap">
+        select u.user_id, dm.dm_content, dm.dm_send_date,
+               case when b.battle_from_date is not null and b.battle_to_date is not null then -1
+                   else dm.dm_battle_quiz_id end as dm_battle_quiz_id
+        from dm_messages dm join users u
+            on dm.fk_dm_user_idx = u.user_idx
+            left join battles b on dm.dm_battle_quiz_id = b.fk_battle_quiz_id
+        where fk_dm_dr_idx = (select dr_idx from dm_rooms where dr_uuid = #{roomUuid})
+        order by dm_send_date desc
+        limit #{scroll}, 10;
+    </select>
+
+    <!-- 해당 유저가 채팅방 참여자인지 확인 -->
+    <select id="getParticipantsYN" resultType="Boolean">
+        select #{loginUserIdx} in (select dp_user_idx
+                                   from dm_participants
+                                   where dp_dr_idx = (select dr_idx
+                                                      from dm_rooms
+                                                      where dr_uuid = #{roomUuid})) participants_YN;
+    </select>
+
+    <!-- getRoomUuid 쿼리 -->
+    <select id="getRoomUuid" resultType="String">
+        select dr_uuid
+        from dm_rooms
+        where dr_idx = (select dm1.dp_dr_idx from dm_participants dm1
+                        join dm_participants dm2 on dm1.dp_dr_idx = dm2.dp_dr_idx
+                        where dm1.dp_user_idx = #{loginUserIdx} and dm2.dp_user_idx = #{chatUserIdx});
+    </select>
+
+    <!-- dm_rooms 테이블에 새로운 방 생성 -->
+    <insert id="createRoom" parameterType="String">
+        insert into dm_rooms (dr_uuid, dr_create_date)
+        values (#{roomUuid}, NOW());
+    </insert>
+
+    <!-- roomUuid로 idx 가져오기 -->
+    <sql id="getRoomIdx">
+        select dr_idx from dm_rooms where dr_uuid = #{roomUuid}
+    </sql>
+
+    <!-- dm_participants 테이블에 참여자 정보 insert -->
+    <insert id="insertParticipants">
+        insert into dm_participants (dp_dr_idx, dp_user_idx, dp_last_date)
+        values ((<include refid="getRoomIdx"></include>), #{loginUserIdx},
+                (select dr_create_date from dm_rooms where dr_idx = (<include refid="getRoomIdx"></include>))),
+               ((<include refid="getRoomIdx"></include>), #{chatUserIdx},
+                (select dr_create_date from dm_rooms where dr_idx = (<include refid="getRoomIdx"></include>)));
+    </insert>
+
+    <!-- getRoomIdxByRoomUuid 쿼리 -->
+    <select id="getRoomIdxByRoomUuid" resultType="int">
+        <include refid="getRoomIdx"></include>
+    </select>
+
+    <!-- getRoomUuidByRoomIdx 쿼리 -->
+    <select id="getRoomUuidByRoomIdx" parameterType="int" resultType="string">
+        select dr_uuid
+        from dm_rooms
+        where dr_idx = #{roomIdx}
+    </select>
+
+    <!-- saveMessage 쿼리 -->
+    <insert id="saveMessage" parameterType="DmDTO">
+        insert into dm_messages (fk_dm_dr_idx, fk_dm_user_idx, dm_content, dm_send_date, dm_battle_quiz_id)
+        values (#{roomIdx},
+                (select user_idx from users where user_id = #{sendUserId}),
+                #{dmContent},
+                #{dmSendDate},
+                #{dmBattleQuizId})
+    </insert>
+
+    <!-- 마지막 조회 시간 갱신 -->
+    <update id="updateLastDate" parameterType="lastDateDTO">
+        update dm_participants
+        set dp_last_date = #{lastDate}
+        where dp_dr_idx = #{roomIdx} and dp_user_idx = (select user_idx from users where user_id = #{userId})
+    </update>
+
+    <!-- 마지막 조회 시간 = 메시지 전송 시간 갱신 -->
+    <update id="updateLastDateSendDate" parameterType="DmDTO">
+        update dm_participants
+        set dp_last_date = #{dmSendDate}
+        where dp_dr_idx = #{roomIdx} and dp_user_idx = (select user_idx from users where user_id = #{sendUserId})
+    </update>
+
+    <!-- 나랑 채팅하는 유저 idx 가져오기 -->
+    <select id="getChatUserIdx" resultType="int">
+        select dp_user_idx
+        from dm_participants
+        where dp_dr_idx = (<include refid="getRoomIdx"></include>) and dp_user_idx != #{userIdx}
+    </select>
+
+    <!-- getChatUser 결과 매핑 -->
+    <resultMap id="DmUserResultMap" type="DmUserDTO">
+        <result property="userId" column="user_id"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userImg" column="user_img"/>
+        <result property="userIntro" column="user_intro"/>
+    </resultMap>
+
+    <!-- 채팅 유저 정보 가져오기 -->
+    <select id="getChatUser" resultMap="DmUserResultMap">
+        select u.user_id, u.user_nickname, u.user_img, u.user_intro
+        from dm_participants dp join users u
+        on dp.dp_user_idx = u.user_idx
+        where dp_dr_idx = (<include refid="getRoomIdx"></include>) and dp_user_idx != #{userIdx}
+    </select>
+</mapper>

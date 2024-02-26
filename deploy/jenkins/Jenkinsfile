@@ -1,0 +1,113 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_MESSAGE = """${sh(
+            script: 'git show -s --pretty="* Commit %h by %cn <%ce>%n* Title: %s%n* Date: %cI"',
+            returnStdout: true
+        )}"""
+        ENDPOINT = 'https://meeting.ssafy.com/hooks/63piomqgsjyf9mshb7wxsy4yuo'
+        CHANNEL = 'D112-Alert'
+        SUCCESS_ICON = 'https://www.jenkins.io/images/logos/seonbi/256.png'
+        FAILED_ICON = 'https://www.jenkins.io/images/logos/fire/256.png'
+    }
+
+    stages {
+        stage('Set environments') {
+            steps {
+                dir('deploy') {
+                    sh './setenv.sh'
+                }
+            }
+        }
+
+        stage('Build and deploy API server') {
+            steps {
+                dir('deploy') {
+                    sh 'echo "Build API server"'
+                    sh 'docker-compose build --no-cache api'
+                    sh 'echo "Deploy API server"'
+                    sh 'docker-compose up -d api'
+                }
+                sh 'sleep 10'
+                script {
+                    def HEALTH = sh(
+                        returnStdout: true,
+                        script: 'curl https://i10d112.p.ssafy.io/devoca/health'
+                    ).trim()
+                    if (HEALTH != '{"health":"good"}') {
+                        error "failed"
+                    }
+                }
+            }
+            post {
+                success {
+                    script {
+                        mattermostSend(
+                            color: 'good',
+                            message: "Succeed to build and deploy API server: ${env.BUILD_URL}\n${GIT_MESSAGE}",
+                            endpoint: "${ENDPOINT}",
+                            channel: "${CHANNEL}",
+                            icon: "${SUCCESS_ICON}"
+                        )
+                    }
+                }
+                failure {
+                    script {
+                        mattermostSend(
+                            color: 'danger',
+                            message: "Failed to build and deploy API server: ${env.BUILD_URL}\n${GIT_MESSAGE}",
+                            endpoint: "${ENDPOINT}",
+                            channel: "${CHANNEL}",
+                            icon: "${FAILED_ICON}"
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Build and deploy FE server') {
+            steps {
+                dir('deploy') {
+                    sh 'echo "Build and deploy FE server"'
+                    sh 'docker-compose build --no-cache frontend'
+                    sh 'docker-compose up -d frontend && docker-compose stop frontend && docker-compose rm -f frontend'
+                }
+                sh 'sleep 10'
+                script {
+                    def HEALTH = sh(
+                        returnStdout: true,
+                        script: 'curl -fsS https://i10d112.p.ssafy.io/ > /dev/null && echo "success"'
+                    ).trim()
+                    if (HEALTH != "success") {
+                        error "failed"
+                    }
+                }
+            }
+            post {
+                success {
+                    script {
+                        mattermostSend(
+                            color: 'good',
+                            message: "Succeed to build and deploy FE server: ${env.BUILD_URL}\n${GIT_MESSAGE}",
+                            endpoint: "${ENDPOINT}",
+                            channel: "${CHANNEL}",
+                            icon: "${SUCCESS_ICON}"
+                        )
+                    }
+                }
+                failure {
+                    script {
+                        mattermostSend(
+                            color: 'danger',
+                            message: "Failed to build and deploy FE server: ${env.BUILD_URL}\n${GIT_MESSAGE}",
+                            endpoint: "${ENDPOINT}",
+                            channel: "${CHANNEL}",
+                            icon: "${FAILED_ICON}"
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

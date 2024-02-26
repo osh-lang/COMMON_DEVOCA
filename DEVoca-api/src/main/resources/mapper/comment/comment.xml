@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.comment.model.mapper.CommentMapper">
+
+    <!-- getCommentList 결과 매핑 -->
+    <resultMap id="commentResultMap" type="commentDTO">
+        <id property="commentId" column="comment_id"/>
+        <result property="cardId" column="comment_card_id"/>
+        <result property="boardId" column="comment_board_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userImg" column="user_img"/>
+        <result property="commentContent" column="comment_content"/>
+        <result property="commentPicked" column="comment_picked"/>
+        <result property="commentRegistDate" column="comment_regist_date"/>
+    </resultMap>
+
+    <!-- comment 조회 시 flag에 따른 Card or Board ID -->
+    <sql id="getCardOrBoard">
+        <if test="flag == 'card'">
+            and c.comment_card_id = #{cardBoardId}
+        </if>
+
+        <if test="flag == 'board'">
+            and c.comment_board_id = #{cardBoardId}
+        </if>
+    </sql>
+
+    <!-- getCommentList 쿼리 -->
+    <select id="getCommentList" resultMap="commentResultMap">
+        select c.comment_id, c.comment_card_id, c.comment_board_id, u.user_id, u.user_nickname, u.user_img, c.comment_content, c.comment_picked, c.comment_regist_date
+        from comments c join users u
+        on c.fk_comment_user_idx = u.user_idx
+        <where>
+            <include refid="getCardOrBoard"></include>
+        </where>
+        and c.comment_delete_date is null
+        order by c.comment_regist_date
+    </select>
+
+    <!-- comment 등록 시 flag에 따른 Card or Board ID -->
+    <sql id="registCardOrBoard">
+        <if test="flag == 'card'">
+            fk_comment_user_idx, comment_card_id, comment_content, comment_regist_date
+        </if>
+
+        <if test="flag == 'board'">
+            fk_comment_user_idx, comment_board_id, comment_content, comment_regist_date
+        </if>
+    </sql>
+
+    <!-- registComment 쿼리 -->
+    <insert id="registComment" parameterType="map">
+        insert into comments (<include refid="registCardOrBoard"></include>)
+        values (#{userIdx}, #{cardBoardId}, #{commentContent}, now())
+    </insert>
+
+    <!-- 댓글 작성자와 동일인인지 확인을 위한 댓글 작성자 idx 가져오기 -->
+    <select id="getUserIdxByCommentId" parameterType="int">
+        select fk_comment_user_idx
+        from comments
+        where comment_id = #{commentId}
+    </select>
+
+    <!-- deleteComment 쿼리 -->
+    <update id="deleteComment" parameterType="int">
+        update comments
+        set comment_delete_date = now()
+        where comment_id = #{commentId}
+    </update>
+
+    <!-- 채택하려는 사용자와 글 작성자가 동일한지 확인을 위한 글 작성자 idx 가져오기 -->
+    <select id="getBoardUserIdx" parameterType="int">
+        select fk_board_user_idx
+        from boards
+        where board_id = #{boardId}
+    </select>
+
+    <!-- pickComment 쿼리 -->
+    <update id="pickComment" parameterType="int">
+        update comments
+        set comment_picked = true
+        where comment_id = #{commentId} and comment_delete_date is null;
+    </update>
+
+    <!-- mypage 내 댓글 목록 쿼리 -->
+    <select id="getMycommentList" resultMap="commentResultMap">
+        select u.user_id, u.user_nickname, u.user_img, c.comment_id, c.comment_content, c.comment_picked, c.comment_regist_date
+             , c.comment_card_id, c.comment_board_id
+        from comments c
+                 join users u on c.fk_comment_user_idx = u.user_idx
+            and c.comment_delete_date is null
+        where u.user_idx = #{userIdx}
+        order by c.comment_regist_date
+    </select>
+</mapper>

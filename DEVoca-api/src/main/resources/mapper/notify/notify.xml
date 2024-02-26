@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.notify.model.mapper.NotifyMapper">
+    <!--  NotifyDTO 매핑  -->
+    <resultMap id="CardDTOResultMap" type="NotifyDTO">
+        <result property="notificationId" column="notifications_id"/>
+        <result property="userIdx" column="fk_notifications_user_idx"/>
+        <result property="notificationType" column="notifications_type"/>
+        <result property="notificationLinkId" column="notifications_link_id"/>
+        <result property="notificationDate" column="notifications_date"/>
+        <result property="isRead" column="notifications_read_yn"/>
+    </resultMap>
+
+    <!--  알림 저장  -->
+    <insert id="saveNotify" parameterType="NotifyDTO">
+        insert into notifications
+        (notifications_id, fk_notifications_user_idx, notifications_type, notifications_link_id, notifications_date, notifications_read_yn)
+        values (#{notificationId}, #{userIdx}, #{notificationType}, #{notificationLinkId}, now(), false);
+    </insert>
+
+    <!--  알림 읽었는지 여부 업데이트  -->
+    <update id="updateNotificationReadYN" parameterType="int">
+        update notifications
+        set notifications_read_yn = true
+        where fk_notifications_user_idx = #{loginUserIdx};
+    </update>
+
+    <!--  알림 목록 조회  -->
+    <select id="getNotification" parameterType="int" resultType="NotifyDTO">
+        select * from notifications
+        where fk_notifications_user_idx = #{loginUserIdx}
+        order by notifications_id desc
+        limit 20;
+    </select>
+
+    <!--  모든 유저의 Idx 가져오기  -->
+    <select id="getAllUserIdx" resultType="int">
+        select user_idx from users;
+    </select>
+</mapper>

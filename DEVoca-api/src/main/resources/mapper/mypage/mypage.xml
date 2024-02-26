@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.devoca.mypage.model.mapper.MypageMapper">
+
+    <resultMap id="getUserDTO" type="UserDTO">
+        <id property="userIdx" column="user_idx"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="userBirth" column="user_birth"/>
+        <result property="userEmail" column="user_email"/>
+        <result property="userNickName" column="user_nickname"/>
+        <result property="userIntro" column="user_intro"/>
+        <result property="userExp" column="user_exp"/>
+        <result property="userImg" column="user_img"/>
+        <result property="userJoinDate" column="user_join_date"/>
+        <result property="userUpdateDate" column="user_update_date"/>
+        <result property="userRevokeDate" column="user_revoke_date"/>
+        <result property="userRefreshToken" column="user_refresh_token"/>
+    </resultMap>
+
+    <resultMap id="getBadgeDTO" type="BadgeDTO">
+        <id property="badgeId" column="badge_id"/>
+        <result property="badgeName" column="badge_name"/>
+        <result property="badgeInfo" column="badge_info"/>
+        <result property="badgeImgName" column="badge_img_name"/>
+    </resultMap>
+
+    <!-- 회원 배지 정보 조회 -->
+    <select id="getUserBadges" parameterType="Integer" resultMap="getBadgeDTO">
+        select b.badge_id, b.badge_name, b.badge_info, b.badge_img_name
+             ,if(ub_badge_id is null, 0, 1) as badgeHaveYn
+        from badges b
+            left join (select ub_badge_id from user_badges where ub_user_idx = #{userIdx}) s on b.badge_id = s.ub_badge_id;
+    </select>
+
+    <!-- 팔로우 하기 -->
+    <insert id="followUser" parameterType="map">
+        insert into follows (follow_from, follow_to)
+        values (#{userIdx}, #{followIdx})
+    </insert>
+
+    <!-- 언팔로우 하기 -->
+    <delete id="unfollowUser" parameterType="map">
+        delete from follows
+        where follow_from = #{userIdx} and follow_to = #{followIdx}
+    </delete>
+
+    <!-- 팔로워 목록 조회 -->
+    <select id="getFollowList" parameterType="Integer" resultMap="getUserDTO">
+        select u.user_id, u.user_nickname, u.user_name, u.user_intro, u.user_img
+             ,if(f.follow_to is null, "N", "Y") as followingYn
+        from follows t
+                 join users u on t.follow_from = u.user_idx
+                 left join (select follow_to from follows where follow_from = #{userIdx}) f
+                           on t.follow_from = f.follow_to
+        where t.follow_to = #{userIdx}
+    </select>
+
+    <!-- 팔로잉 목록 조회 -->
+    <select id="getFollowingList" parameterType="Integer" resultMap="getUserDTO">
+        select u.user_id, u.user_nickname, u.user_name, u.user_intro, u.user_img
+        from follows t
+                 join users u on t.follow_to = u.user_idx
+        where t.follow_from =#{userIdx}
+    </select>
+
+    <!-- 팔로우 추천 -->
+    <select id="recommendFollow" parameterType="Integer" resultMap="getUserDTO">
+        select count(follow_from) as userFollowerCnt, u.user_id, u.user_name, u.user_intro, u.user_img
+        from follows f
+                 join users u on u.user_idx = f.follow_to
+        where follow_to
+                  in (select distinct uf_user_idx from users_favorite_categories
+                      where
+                          uf_category_id
+                          in (select uf_category_id from users_favorite_categories where uf_user_idx = #{userIdx})
+                        and uf_user_idx != #{userIdx})
+        group by follow_to
+        order by userFollowerCnt desc
+    </select>
+
+    <update id="saveImageUrl" parameterType="map">
+        update users
+        set user_img = #{url} where user_idx = #{userIdx}
+    </update>
+</mapper>
